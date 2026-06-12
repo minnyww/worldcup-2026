@@ -1,0 +1,18 @@
+[
+    {"city": "Vancouver", "timezone": "UTC-7", "name": "BC Place", "capacity": 54000},
+    {"city": "Seattle", "timezone": "UTC-7", "name": "Lumen Field", "capacity": 69000},
+    {"city": "San Francisco Bay Area (Santa Clara)", "timezone": "UTC-7", "name": "Levi's Stadium", "capacity": 71000},
+    {"city": "Los Angeles (Inglewood)", "timezone": "UTC-7", "name": "SoFi Stadium", "capacity": 70000},
+    {"city": "Guadalajara (Zapopan)", "timezone": "UTC-6", "name": "Estadio Akron", "capacity": 48000},
+    {"city": "Mexico City", "timezone": "UTC-6", "name": "Estadio Azteca", "capacity": 83000},
+    {"city": "Monterrey (Guadalupe)", "timezone": "UTC-6", "name": "Estadio BBVA", "capacity": 53500},
+    {"city": "Houston", "timezone": "UTC-5", "name": "NRG Stadium", "capacity": 72000},
+    {"city": "Dallas (Arlington)", "timezone": "UTC-5", "name": "AT&T Stadium", "capacity": 94000},
+    {"city": "Kansas City", "timezone": "UTC-5", "name": "Arrowhead Stadium", "capacity": 73000},
+    {"city": "Atlanta", "timezone": "UTC-4", "name": "Mercedes-Benz Stadium", "capacity": 75000},
+    {"city": "Miami (Miami Gardens)", "timezone": "UTC-4", "name": "Hard Rock Stadium", "capacity": 65000},
+    {"city": "Toronto", "timezone": "UTC-4", "name": "BMO Field", "capacity": 45000},
+    {"city": "Boston (Foxborough)", "timezone": "UTC-4", "name": "Gillette Stadium", "capacity": 65000},
+    {"city": "Philadelphia", "timezone": "UTC-4", "name": "Lincoln Financial Field", "capacity": 69000},
+    {"city": "New York/New Jersey (East Rutherford)", "timezone": "UTC-4", "name": "MetLife Stadium", "capacity": 82500}
+]
