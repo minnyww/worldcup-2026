@@ -1,9 +1,7 @@
-import { useMemo } from "react"
+import { useMemo, useRef, useEffect } from "react"
 import type { Match, Team } from "../types"
 import { MatchCard } from "./match-card"
-import { Badge } from "./ui/badge"
 import { cn } from "@/lib/utils"
-import { ChevronLeft, ChevronRight } from "lucide-react"
 
 interface CalendarViewProps {
   matches: Match[]
@@ -16,25 +14,15 @@ interface CalendarViewProps {
   onMatchSelect: (match: Match) => void
 }
 
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+const MONTH_ABBR = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
 const MONTH_NAMES = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
 ]
 
 const filters = [
   { key: "all" as const, label: "All" },
-  { key: "group" as const, label: "Group" },
+  { key: "group" as const, label: "Groups" },
   { key: "knockout" as const, label: "Knockout" },
 ]
 
@@ -48,33 +36,36 @@ export function CalendarView({
   dateRange,
   onMatchSelect,
 }: CalendarViewProps) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+
   const weekDates = useMemo(() => {
     const selected = new Date(selectedDate)
     const day = selected.getDay()
     const start = new Date(selected)
-    start.setDate(start.getDate() - day)
-    return Array.from({ length: 7 }, (_, i) => {
+    start.setDate(start.getDate() - day - 7)
+    return Array.from({ length: 21 }, (_, i) => {
       const d = new Date(start)
       d.setDate(d.getDate() + i)
       return d.toISOString().split("T")[0]
     })
   }, [selectedDate])
 
-  const weekIndex = useMemo(() => {
-    return dateRange.findIndex((d) => weekDates.includes(d))
-  }, [dateRange, weekDates])
+  useEffect(() => {
+    if (scrollRef.current) {
+      const selectedEl = scrollRef.current.querySelector("[data-selected]")
+      if (selectedEl) {
+        selectedEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" })
+      }
+    }
+  }, [selectedDate])
 
   const navigateWeek = (dir: -1 | 1) => {
-    const currentIndex = weekIndex >= 0 ? weekIndex : 0
     const newDate = new Date(selectedDate)
     newDate.setDate(newDate.getDate() + dir * 7)
     const newDateStr = newDate.toISOString().split("T")[0]
     const closest = dateRange.reduce((prev, curr) =>
-      Math.abs(
-        new Date(curr).getTime() - new Date(newDateStr).getTime()
-      ) < Math.abs(
-        new Date(prev).getTime() - new Date(newDateStr).getTime()
-      )
+      Math.abs(new Date(curr).getTime() - new Date(newDateStr).getTime()) <
+      Math.abs(new Date(prev).getTime() - new Date(newDateStr).getTime())
         ? curr
         : prev
     )
@@ -93,64 +84,94 @@ export function CalendarView({
   const groupMatches = dayMatches.filter((m) => m.group)
   const knockoutMatches = dayMatches.filter((m) => !m.group)
 
+  const d = new Date(selectedDate)
+
   return (
-    <div className="flex flex-col gap-4 px-4 pt-4">
+    <div className="space-y-8">
+      {/* Month header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold">
-          {MONTH_NAMES[new Date(selectedDate).getMonth()]}{" "}
-          {new Date(selectedDate).getFullYear()}
-        </h2>
-        <div className="flex items-center gap-1">
+        <div>
+          <h2 className="text-headline-lg-mobile font-headline-lg-mobile uppercase tracking-tight text-on-surface">
+            {MONTH_NAMES[d.getMonth()]}
+          </h2>
+          <p className="text-body-base font-body-base text-on-surface-variant mt-0.5">{d.getFullYear()}</p>
+        </div>
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => navigateWeek(-1)}
-            className="rounded-full p-1 text-muted-foreground hover:text-foreground"
+            className="flex size-9 items-center justify-center rounded-xl glass-card text-on-surface-variant transition-all active:scale-90 hover:bg-white/10"
           >
-            <ChevronLeft className="size-4" />
+            <span className="material-symbols-outlined text-sm">chevron_left</span>
           </button>
           <button
             onClick={() => navigateWeek(1)}
-            className="rounded-full p-1 text-muted-foreground hover:text-foreground"
+            className="flex size-9 items-center justify-center rounded-xl glass-card text-on-surface-variant transition-all active:scale-90 hover:bg-white/10"
           >
-            <ChevronRight className="size-4" />
+            <span className="material-symbols-outlined text-sm">chevron_right</span>
           </button>
         </div>
       </div>
 
-      <div className="flex gap-1 overflow-x-auto scrollbar-none">
+      {/* Horizontal date scroller */}
+      <div
+        ref={scrollRef}
+        className="flex gap-3 overflow-x-auto hide-scrollbar -mx-container-margin px-container-margin py-2 snap-x snap-mandatory"
+      >
         {weekDates.map((date) => {
-          const d = new Date(date)
+          const dateObj = new Date(date)
           const isSelected = date === selectedDate
           const hasMatches = matches.some((m) => m.date === date)
           return (
             <button
               key={date}
+              data-selected={isSelected ? "" : undefined}
               onClick={() => onDateSelect(date)}
               className={cn(
-                "flex flex-1 min-w-[48px] flex-col items-center gap-1 rounded-xl py-2 text-xs transition-all",
+                "animate-fade-in-up snap-center flex-shrink-0 flex flex-col items-center justify-center transition-all duration-300 active:scale-95",
                 isSelected
-                  ? "bg-primary text-primary-foreground font-bold"
-                  : hasMatches
-                    ? "bg-secondary text-foreground hover:bg-secondary/80"
-                    : "text-muted-foreground hover:bg-secondary/50"
+                  ? "w-20 h-24 rounded-2xl electric-gradient text-on-tertiary shadow-[0_0_24px_rgba(53,125,241,0.3)] ring-4 ring-tertiary/20"
+                  : "w-16 h-20 rounded-xl glass-card border-white/5 text-on-surface-variant opacity-60 hover:opacity-100"
               )}
             >
-              <span className="font-medium">{DAY_NAMES[d.getDay()]}</span>
-              <span className="text-lg font-bold">{d.getDate()}</span>
+              <span className={cn(
+                "text-label-caps font-label-caps",
+                isSelected ? "font-extrabold" : ""
+              )}>
+                {MONTH_ABBR[dateObj.getMonth()]}
+              </span>
+              <span className={cn(
+                "text-headline-lg-mobile font-headline-lg-mobile leading-none",
+                isSelected ? "text-3xl" : "text-2xl"
+              )}>
+                {dateObj.getDate()}
+              </span>
+              {isSelected && (
+                <div className="w-1.5 h-1.5 bg-white rounded-full mt-2" />
+              )}
+              {!isSelected && hasMatches && (
+                <div className="flex gap-0.5 mt-1.5">
+                  <div className="size-1 rounded-full bg-tertiary" />
+                  {matches.filter(m => m.date === date).length > 1 && (
+                    <div className="size-1 rounded-full bg-tertiary/50" />
+                  )}
+                </div>
+              )}
             </button>
           )
         })}
       </div>
 
+      {/* Filter pills */}
       <div className="flex gap-2">
         {filters.map(({ key, label }) => (
           <button
             key={key}
             onClick={() => onFilterChange(key)}
             className={cn(
-              "rounded-full px-4 py-1.5 text-xs font-medium transition-colors",
+              "rounded-full px-5 py-2 text-label-caps font-label-caps transition-all duration-300 active:scale-95",
               matchFilter === key
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary text-muted-foreground hover:text-foreground"
+                ? "bg-tertiary-container text-tertiary border border-tertiary/20 shadow-[0_0_15px_rgba(173,198,255,0.2)]"
+                : "glass-card text-on-surface-variant hover:bg-white/10"
             )}
           >
             {label}
@@ -158,13 +179,16 @@ export function CalendarView({
         ))}
       </div>
 
-      <div className="flex flex-col gap-2">
+      {/* Match list */}
+      <div className="flex flex-col gap-6">
         {groupMatches.length > 0 && (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-4">
             {matchFilter === "all" && (
-              <h3 className="text-xs font-semibold uppercase text-muted-foreground">
-                Group Stage
-              </h3>
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/10" />
+                <span className="text-label-caps font-label-caps text-tertiary tracking-widest bg-tertiary/10 px-3 py-1 rounded-full border border-tertiary/20">Group Stage</span>
+                <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/10" />
+              </div>
             )}
             {groupMatches.map((match, i) => (
               <MatchCard
@@ -172,17 +196,20 @@ export function CalendarView({
                 match={match}
                 teams={teams}
                 onClick={() => onMatchSelect(match)}
+                delay={i * 60}
               />
             ))}
           </div>
         )}
 
         {knockoutMatches.length > 0 && (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-4">
             {matchFilter === "all" && (
-              <h3 className="text-xs font-semibold uppercase text-muted-foreground">
-                Knockout Stage
-              </h3>
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/10" />
+                <span className="text-label-caps font-label-caps text-tertiary tracking-widest bg-tertiary/10 px-3 py-1 rounded-full border border-tertiary/20">Knockout</span>
+                <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/10" />
+              </div>
             )}
             {knockoutMatches.map((match, i) => (
               <MatchCard
@@ -190,14 +217,21 @@ export function CalendarView({
                 match={match}
                 teams={teams}
                 onClick={() => onMatchSelect(match)}
+                delay={(groupMatches.length + i) * 60}
               />
             ))}
           </div>
         )}
 
         {dayMatches.length === 0 && (
-          <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
-            <p className="text-sm">No matches on this date</p>
+          <div className="animate-fade-in-scale flex flex-col items-center gap-4 py-20">
+            <div className="flex size-16 items-center justify-center rounded-2xl glass-card">
+              <span className="material-symbols-outlined text-2xl text-on-surface-variant/50">sports_soccer</span>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <p className="text-body-base font-body-base font-semibold text-on-surface-variant">No matches</p>
+              <p className="text-body-base font-body-base text-on-surface-variant/60">Try another date</p>
+            </div>
           </div>
         )}
       </div>

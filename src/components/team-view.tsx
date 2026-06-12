@@ -1,9 +1,6 @@
 import { useMemo, useState } from "react"
 import type { Match, Team } from "../types"
 import { MatchCard } from "./match-card"
-import { Badge } from "./ui/badge"
-import { cn } from "@/lib/utils"
-import { Search } from "lucide-react"
 
 interface TeamViewProps {
   matches: Match[]
@@ -11,6 +8,10 @@ interface TeamViewProps {
   selectedTeam: string | null
   onTeamSelect: (team: string | null) => void
   onMatchSelect: (match: Match) => void
+}
+
+function getTeamFlag(fifaCode: string): string {
+  return `https://flagcdn.com/80x60/${fifaCode.toLowerCase()}.png`
 }
 
 export function TeamView({
@@ -42,7 +43,7 @@ export function TeamView({
   const groupedByRound = useMemo(() => {
     const map = new Map<string, Match[]>()
     for (const m of teamMatches) {
-      const key = m.group ? `Group Stage — ${m.group}` : m.round
+      const key = m.group ? `Group ${m.group}` : m.round
       const arr = map.get(key) ?? []
       arr.push(m)
       map.set(key, arr)
@@ -50,62 +51,115 @@ export function TeamView({
     return Array.from(map.entries())
   }, [teamMatches])
 
-  return (
-    <div className="flex flex-col gap-4 px-4 pt-4">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          type="text"
-          placeholder="Search teams..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-xl border border-border bg-secondary py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-        />
-      </div>
+  const selectedTeamData = selectedTeam
+    ? teams.find((t) => t.name === selectedTeam)
+    : null
 
-      <div className="flex flex-wrap gap-2">
-        {filteredTeams.map((team) => (
+  if (selectedTeam) {
+    return (
+      <div className="space-y-gutter">
+        {/* Team header */}
+        <div className="animate-fade-in-up flex items-center gap-4">
           <button
-            key={team.fifa_code}
-            onClick={() =>
-              onTeamSelect(selectedTeam === team.name ? null : team.name)
-            }
-            className={cn(
-              "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all",
-              selectedTeam === team.name
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-secondary text-muted-foreground hover:text-foreground"
-            )}
+            onClick={() => onTeamSelect(null)}
+            className="flex size-10 items-center justify-center rounded-xl glass-card transition-all active:scale-90 hover:bg-white/10"
           >
-            <span className="text-base">{team.flag_icon}</span>
-            {team.fifa_code}
+            <span className="material-symbols-outlined text-on-surface-variant">arrow_back</span>
           </button>
-        ))}
-      </div>
+          <div className="flex items-center gap-3">
+            {selectedTeamData && (
+              <div className="flex size-12 items-center justify-center rounded-xl bg-tertiary-container border border-tertiary/20 overflow-hidden">
+                <img 
+                  src={getTeamFlag(selectedTeamData.fifa_code)}
+                  alt={selectedTeam}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            <div>
+              <h2 className="text-headline-lg-mobile font-headline-lg-mobile uppercase tracking-tight text-on-surface">{selectedTeam}</h2>
+              <p className="text-label-caps font-label-caps text-on-surface-variant font-extrabold uppercase tracking-[0.1em]">
+                {teamMatches.length} matches
+              </p>
+            </div>
+          </div>
+        </div>
 
-      {selectedTeam && (
-        <div className="flex flex-col gap-2">
-          {groupedByRound.map(([round, roundMatches]) => (
-            <div key={round} className="flex flex-col gap-2">
-              <h3 className="text-xs font-semibold uppercase text-muted-foreground">
-                {round}
-              </h3>
+        {/* Matches */}
+        <div className="flex flex-col gap-4">
+          {groupedByRound.map(([round, roundMatches], ri) => (
+            <div key={round} className="flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/10" />
+                <span className="text-label-caps font-label-caps text-tertiary tracking-widest bg-tertiary/10 px-3 py-1 rounded-full border border-tertiary/20">{round}</span>
+                <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/10" />
+              </div>
               {roundMatches.map((match, i) => (
                 <MatchCard
                   key={`${round}-${i}`}
                   match={match}
                   teams={teams}
                   onClick={() => onMatchSelect(match)}
+                  delay={(ri * 3 + i) * 60}
                 />
               ))}
             </div>
           ))}
         </div>
-      )}
+      </div>
+    )
+  }
 
-      {!selectedTeam && (
-        <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
-          <p className="text-sm">Select a team to view their matches</p>
+  return (
+    <div className="space-y-gutter">
+      {/* Search */}
+      <div className="animate-fade-in-up relative">
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-sm text-on-surface-variant">search</span>
+        <input
+          type="text"
+          placeholder="Search teams..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full rounded-xl glass-card py-3.5 pl-11 pr-11 text-body-base font-body-base text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-tertiary/25 focus:border-tertiary/40 transition-all"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 flex size-7 items-center justify-center rounded-full bg-surface-container text-on-surface-variant transition-all active:scale-90"
+          >
+            <span className="material-symbols-outlined text-xs">close</span>
+          </button>
+        )}
+      </div>
+
+      {/* Team grid */}
+      <div className="grid grid-cols-3 gap-2">
+        {filteredTeams.map((team) => (
+          <button
+            key={team.fifa_code}
+            onClick={() => onTeamSelect(team.name)}
+            className="animate-fade-in-up group relative flex flex-col items-center gap-2 glass-card rounded-xl p-3 transition-transform active:scale-90 hover:border-white/30 overflow-hidden"
+          >
+            <div className="flex size-12 items-center justify-center rounded-xl bg-surface-container border border-white/10 transition-transform duration-300 group-hover:scale-110 overflow-hidden">
+              <img 
+                src={getTeamFlag(team.fifa_code)}
+                alt={team.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <span className="text-label-caps font-label-caps text-on-surface-variant group-hover:text-on-surface transition-colors uppercase">
+              {team.fifa_code}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {filteredTeams.length === 0 && (
+        <div className="animate-fade-in-scale flex flex-col items-center gap-3 py-16">
+          <div className="flex size-14 items-center justify-center rounded-2xl glass-card">
+            <span className="material-symbols-outlined text-xl text-on-surface-variant/50">groups</span>
+          </div>
+          <p className="text-body-base font-body-base text-on-surface-variant">No teams found</p>
         </div>
       )}
     </div>

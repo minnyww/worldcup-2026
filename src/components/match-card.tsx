@@ -1,18 +1,18 @@
 import type { Match, Team } from "../types"
-import { Badge } from "./ui/badge"
 import { cn } from "@/lib/utils"
 
 interface MatchCardProps {
   match: Match
   teams: Team[]
   onClick?: () => void
+  delay?: number
 }
 
 function getTeamFlag(teamName: string, teams: Team[]): string {
   const team = teams.find(
     (t) => t.name === teamName || t.fifa_code === teamName
   )
-  return team?.flag_icon ?? ""
+  return team?.flag_icon ?? "🏳️"
 }
 
 function getMatchStatus(match: Match): "live" | "ended" | "upcoming" {
@@ -26,13 +26,7 @@ function getMatchStatus(match: Match): "live" | "ended" | "upcoming" {
   return "upcoming"
 }
 
-const statusConfig = {
-  live: { label: "LIVE", className: "bg-[var(--live)] text-white" },
-  ended: { label: "ENDED", className: "bg-primary text-primary-foreground" },
-  upcoming: { label: "UPCOMING", className: "bg-[var(--upcoming)] text-white" },
-}
-
-export function MatchCard({ match, teams, onClick }: MatchCardProps) {
+export function MatchCard({ match, teams, onClick, delay = 0 }: MatchCardProps) {
   const status = getMatchStatus(match)
   const flag1 = getTeamFlag(match.team1, teams)
   const flag2 = getTeamFlag(match.team2, teams)
@@ -40,39 +34,67 @@ export function MatchCard({ match, teams, onClick }: MatchCardProps) {
   return (
     <button
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition-colors hover:bg-accent/10 active:scale-[0.98]"
+      style={{ animationDelay: `${delay}ms` }}
+      className={cn(
+        "animate-fade-in-up group relative w-full glass-card rounded-xl p-card-padding text-left transition-transform active:scale-95 duration-150",
+        status === "live" && "border-error/30"
+      )}
     >
-      <div className="flex flex-1 items-center gap-3">
-        <div className="flex flex-1 items-center justify-end gap-2">
-          <span className="truncate text-sm font-medium">{match.team1}</span>
-          <span className="text-2xl">{flag1}</span>
+      {status === "live" && (
+        <div className="absolute top-0 right-0 p-2">
+          <span className="px-2 py-0.5 rounded-full bg-error/20 text-error text-[10px] font-bold uppercase tracking-wider">
+            LIVE
+          </span>
         </div>
+      )}
 
-        <div className="flex flex-col items-center gap-1">
-          {match.score ? (
-            <span className="text-xl font-bold tabular-nums">
-              {match.score.ft[0]} : {match.score.ft[1]}
-            </span>
-          ) : (
-            <span className="text-sm font-medium text-muted-foreground">
-              vs
+      <div className="flex flex-col gap-4">
+        {/* Team 1 */}
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-surface-container border border-white/10 flex items-center justify-center text-lg overflow-hidden">
+              {flag1}
+            </div>
+            <span className="text-body-base font-body-base font-bold text-lg">{match.team1}</span>
+          </div>
+          {match.score && (
+            <span className="text-display-xl font-display-xl text-primary tracking-widest">
+              {match.score.ft[0]}
             </span>
           )}
-          <Badge
-            variant="secondary"
-            className={cn(
-              "px-2 py-0 text-[10px] font-bold uppercase",
-              statusConfig[status].className
-            )}
-          >
-            {statusConfig[status].label}
-          </Badge>
         </div>
 
-        <div className="flex flex-1 items-center gap-2">
-          <span className="text-2xl">{flag2}</span>
-          <span className="truncate text-sm font-medium">{match.team2}</span>
+        {/* Team 2 */}
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-surface-container border border-white/10 flex items-center justify-center text-lg overflow-hidden">
+              {flag2}
+            </div>
+            <span className="text-body-base font-body-base font-bold text-lg">{match.team2}</span>
+          </div>
+          {match.score && (
+            <span className="text-display-xl font-display-xl text-primary tracking-widest">
+              {match.score.ft[1]}
+            </span>
+          )}
         </div>
+      </div>
+
+      {/* Bottom info */}
+      <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center">
+        <span className="text-label-caps font-label-caps text-on-surface-variant uppercase opacity-60">
+          {match.ground}
+        </span>
+        {!match.score && (
+          <span className="text-data-tabular font-data-tabular text-on-tertiary-container font-bold italic">
+            {match.time}
+          </span>
+        )}
+        {match.score && match.goals1 && match.goals1.length > 0 && (
+          <span className="text-xs text-on-tertiary-container font-bold italic">
+            {match.goals1[0].name} {match.goals1[0].minute}'
+          </span>
+        )}
       </div>
     </button>
   )

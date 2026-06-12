@@ -1,11 +1,9 @@
 import { useState, useMemo } from "react"
-import type { Team, Squad, Player } from "../types"
-import { Search, ChevronLeft } from "lucide-react"
+import type { Squad } from "../types"
 import { cn } from "@/lib/utils"
 
 interface SquadViewProps {
   squads: Squad[]
-  teams: Team[]
 }
 
 function calcAge(dob: string): number {
@@ -17,79 +15,21 @@ function calcAge(dob: string): number {
   return age
 }
 
-const FORMATION_442: { pos: string; x: number; y: number }[] = [
-  { pos: "GK", x: 50, y: 90 },
-  { pos: "LB", x: 12, y: 68 },
-  { pos: "CB", x: 37, y: 72 },
-  { pos: "CB", x: 63, y: 72 },
-  { pos: "RB", x: 88, y: 68 },
-  { pos: "LM", x: 15, y: 45 },
-  { pos: "CM", x: 38, y: 50 },
-  { pos: "CM", x: 62, y: 50 },
-  { pos: "RM", x: 85, y: 45 },
-  { pos: "ST", x: 37, y: 20 },
-  { pos: "ST", x: 63, y: 20 },
-]
-
-function groupByPosition(players: Player[]) {
-  const groups: Record<string, Player[]> = { GK: [], DF: [], MF: [], FW: [] }
-  for (const p of players) {
-    groups[p.pos]?.push(p)
-  }
-  return groups
-}
-
-function buildFormation(players: Player[]) {
-  const grouped = groupByPosition(players)
-  const formation: { player: Player; x: number; y: number }[] = []
-
-  const gk = grouped.GK[0]
-  if (gk) formation.push({ player: gk, x: 50, y: 90 })
-
-  const defenders = grouped.DF
-  const dCount = Math.min(defenders.length, 5)
-  const dStartX = 50 - (dCount - 1) * 10
-  defenders.slice(0, dCount).forEach((p, i) => {
-    formation.push({ player: p, x: dStartX + i * 20, y: 72 })
-  })
-
-  const midfielders = grouped.MF
-  const mCount = Math.min(midfielders.length, 5)
-  const mStartX = 50 - (mCount - 1) * 10
-  midfielders.slice(0, mCount).forEach((p, i) => {
-    formation.push({ player: p, x: mStartX + i * 20, y: 48 })
-  })
-
-  const forwards = grouped.FW
-  const fCount = Math.min(forwards.length, 4)
-  const fStartX = 50 - (fCount - 1) * 12
-  forwards.slice(0, fCount).forEach((p, i) => {
-    formation.push({ player: p, x: fStartX + i * 24, y: 22 })
-  })
-
-  return { formation, grouped, extras: {
-    GK: grouped.GK.slice(dCount > 0 ? 0 : 1),
-    DF: grouped.DF.slice(dCount),
-    MF: grouped.MF.slice(mCount),
-    FW: grouped.FW.slice(fCount),
-  }}
-}
-
-const POS_COLORS: Record<string, string> = {
-  GK: "bg-yellow-500/20 text-yellow-400 border-yellow-500/40",
-  DF: "bg-blue-500/20 text-blue-400 border-blue-500/40",
-  MF: "bg-green-500/20 text-green-400 border-green-500/40",
-  FW: "bg-red-500/20 text-red-400 border-red-500/40",
-}
-
 const POS_BG: Record<string, string> = {
-  GK: "bg-yellow-500",
-  DF: "bg-blue-500",
-  MF: "bg-green-500",
-  FW: "bg-red-500",
+  GK: "bg-secondary",
+  DF: "bg-tertiary",
+  MF: "bg-on-tertiary-container",
+  FW: "bg-error",
 }
 
-export function SquadView({ squads, teams }: SquadViewProps) {
+const POS_LABELS: Record<string, string> = {
+  GK: "Goalkeepers",
+  DF: "Defenders",
+  MF: "Midfielders",
+  FW: "Forwards",
+}
+
+export function SquadView({ squads }: SquadViewProps) {
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
   const [search, setSearch] = useState("")
 
@@ -107,165 +47,110 @@ export function SquadView({ squads, teams }: SquadViewProps) {
   }, [sortedSquads, search])
 
   const squad = squads.find((s) => s.name === selectedTeam)
-  const teamFlag = teams.find((t) => t.name === selectedTeam)?.flag_icon ?? ""
 
   if (squad) {
-    const { formation, grouped, extras } = buildFormation(squad.players)
-    const hasExtras = extras.DF.length + extras.MF.length + extras.FW.length > 0
-
     return (
-      <div className="flex flex-col gap-4 px-4 pt-4">
-        <button
-          onClick={() => setSelectedTeam(null)}
-          className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 self-start"
-        >
-          <ChevronLeft className="size-4" />
-          All Teams
-        </button>
+      <div className="space-y-gutter">
+        {/* Player list by position */}
+        {(["GK", "DF", "MF", "FW"] as const).map((pos) => {
+          const posPlayers = squad.players.filter(p => p.pos === pos)
+          if (posPlayers.length === 0) return null
 
-        <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
-          <span className="text-4xl">{teamFlag}</span>
-          <div>
-            <h2 className="text-lg font-bold">{squad.name}</h2>
-            <p className="text-xs text-muted-foreground">
-              {squad.group} &middot; {squad.players.length} players
-            </p>
-          </div>
-        </div>
-
-        {/* Pitch Formation */}
-        <div className="relative w-full overflow-hidden rounded-2xl border border-green-900/50 bg-gradient-to-b from-[#1a5c2a] to-[#145a22]">
-          {/* Field markings */}
-          <svg className="absolute inset-0 h-full w-full opacity-20" viewBox="0 0 100 100" preserveAspectRatio="none">
-            <rect x="0" y="0" width="100" height="100" fill="none" stroke="white" strokeWidth="0.3" />
-            <line x1="0" y1="50" x2="100" y2="50" stroke="white" strokeWidth="0.2" />
-            <circle cx="50" cy="50" r="9.15" fill="none" stroke="white" strokeWidth="0.2" />
-            <circle cx="50" cy="50" r="0.5" fill="white" />
-            <rect x="0" y="30" width="16.5" height="40" fill="none" stroke="white" strokeWidth="0.2" />
-            <rect x="83.5" y="30" width="16.5" height="40" fill="none" stroke="white" strokeWidth="0.2" />
-            <rect x="0" y="37" width="5.5" height="26" fill="none" stroke="white" strokeWidth="0.2" />
-            <rect x="94.5" y="37" width="5.5" height="26" fill="none" stroke="white" strokeWidth="0.2" />
-            <path d="M 16.5 40.85 A 9.15 9.15 0 0 1 16.5 59.15" fill="none" stroke="white" strokeWidth="0.2" />
-            <path d="M 83.5 40.85 A 9.15 9.15 0 0 0 83.5 59.15" fill="none" stroke="white" strokeWidth="0.2" />
-          </svg>
-
-          <div className="relative h-[320px]">
-            {formation.map(({ player, x, y }, i) => (
-              <div
-                key={player.number}
-                className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5 transition-all hover:scale-110 hover:z-10"
-                style={{ left: `${x}%`, top: `${y}%` }}
-              >
-                <div className={cn(
-                  "flex size-9 items-center justify-center rounded-full text-xs font-bold text-white shadow-lg",
-                  POS_BG[player.pos]
-                )}>
-                  {player.number}
-                </div>
-                <span className="max-w-[72px] truncate rounded-full bg-black/60 px-1.5 py-0.5 text-[8px] font-medium text-white backdrop-blur-sm">
-                  {player.name.split(" ").pop()}
-                </span>
+          return (
+            <section key={pos}>
+              <div className="flex items-center gap-3 mb-4">
+                <span className={cn("w-1.5 h-6 rounded-full", POS_BG[pos])} />
+                <h2 className="text-title-md font-title-md uppercase tracking-widest text-tertiary">{POS_LABELS[pos]}</h2>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Bench / Reserves */}
-        {hasExtras && (
-          <div className="flex flex-col gap-2">
-            <h3 className="text-xs font-semibold uppercase text-muted-foreground">Bench</h3>
-            <div className="flex flex-wrap gap-1.5">
-              {(["GK", "DF", "MF", "FW"] as const).map((pos) =>
-                extras[pos].map((p) => (
-                  <div
-                    key={p.number}
-                    className={cn(
-                      "flex items-center gap-1.5 rounded-full border px-2 py-1",
-                      POS_COLORS[p.pos]
-                    )}
-                  >
-                    <span className="text-[10px] font-bold">{p.number}</span>
-                    <span className="text-[10px] font-medium">{p.name.split(" ").pop()}</span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Full Squad List */}
-        <div className="flex flex-col gap-2">
-          <h3 className="text-xs font-semibold uppercase text-muted-foreground">Full Squad</h3>
-          <div className="grid grid-cols-2 gap-2">
-            {squad.players
-              .slice()
-              .sort((a, b) => a.number - b.number)
-              .map((player) => (
-                <div
-                  key={player.number}
-                  className="flex items-center gap-3 rounded-xl border border-border bg-card p-3"
-                >
-                  <div className={cn(
-                    "flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white",
-                    POS_BG[player.pos]
-                  )}>
-                    {player.number}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{player.name}</p>
-                    <div className="flex items-center gap-1.5">
-                      <span className={cn(
-                        "rounded-full px-1.5 py-0 text-[9px] font-bold",
-                        POS_COLORS[player.pos]
-                      )}>
-                        {player.pos}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground">
-                        {calcAge(player.date_of_birth)}
-                      </span>
+              <div className="space-y-2">
+                {posPlayers
+                  .slice()
+                  .sort((a, b) => a.number - b.number)
+                  .map((player) => (
+                    <div
+                      key={player.number}
+                      className="glass-card rounded-xl p-4 flex items-center justify-between hover:bg-white/10 transition-all cursor-pointer group active:scale-[0.98]"
+                    >
+                      <div className="flex items-center gap-4">
+                        <span className="text-data-tabular font-data-tabular text-secondary text-lg w-6">{player.number}</span>
+                        <div className="w-10 h-10 rounded-full overflow-hidden bg-surface-container border border-white/10 flex items-center justify-center">
+                          <span className="material-symbols-outlined text-sm text-on-surface-variant">person</span>
+                        </div>
+                        <div>
+                          <h3 className="text-body-base font-body-base leading-none">{player.name}</h3>
+                          <p className="text-on-surface-variant text-[12px] uppercase tracking-wider mt-1">Age {calcAge(player.date_of_birth)}</p>
+                        </div>
+                      </div>
+                      <span className="material-symbols-outlined text-on-surface-variant group-hover:text-tertiary transition-colors">chevron_right</span>
                     </div>
-                  </div>
-                </div>
-              ))}
-          </div>
-        </div>
+                  ))}
+              </div>
+            </section>
+          )
+        })}
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col gap-4 px-4 pt-4">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+    <div className="space-y-gutter">
+      {/* Search */}
+      <div className="animate-fade-in-up relative">
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-sm text-on-surface-variant">search</span>
         <input
           type="text"
-          placeholder="Search teams..."
+          placeholder="Search squads..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-xl border border-border bg-secondary py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className="w-full rounded-xl glass-card py-3.5 pl-11 pr-11 text-body-base font-body-base text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-tertiary/25 focus:border-tertiary/40 transition-all"
         />
+        {search && (
+          <button
+            onClick={() => setSearch("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 flex size-7 items-center justify-center rounded-full bg-surface-container text-on-surface-variant transition-all active:scale-90"
+          >
+            <span className="material-symbols-outlined text-xs">close</span>
+          </button>
+        )}
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      {/* Squad cards */}
+      <div className="grid grid-cols-2 gap-2.5">
         {filteredSquads.map((s) => {
-          const flag = teams.find((t) => t.name === s.name)?.flag_icon ?? ""
           return (
             <button
               key={s.fifa_code}
               onClick={() => setSelectedTeam(s.name)}
-              className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition-colors hover:bg-accent/10 active:scale-[0.98]"
+              className="animate-fade-in-up group relative overflow-hidden glass-card rounded-xl p-4 text-left transition-transform active:scale-[0.97] hover:border-white/30"
             >
-              <span className="text-3xl">{flag}</span>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium">{s.name}</p>
-                <p className="text-[10px] text-muted-foreground">
-                  {s.group} &middot; {s.players.length} players
-                </p>
+              <div className="flex items-center gap-3">
+                <div className="flex size-12 items-center justify-center rounded-xl bg-surface-container border border-white/10 transition-transform duration-300 group-hover:scale-110 overflow-hidden">
+                  <img 
+                    src={`https://flagcdn.com/80x60/${s.fifa_code.toLowerCase()}.png`}
+                    alt={s.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-body-base font-body-base font-bold">{s.name}</p>
+                  <p className="text-on-surface-variant text-[9px] mt-0.5 font-medium">
+                    {s.players.length} players
+                  </p>
+                </div>
               </div>
             </button>
           )
         })}
       </div>
+
+      {filteredSquads.length === 0 && (
+        <div className="animate-fade-in-scale flex flex-col items-center gap-3 py-16">
+          <div className="flex size-14 items-center justify-center rounded-2xl glass-card">
+            <span className="material-symbols-outlined text-xl text-on-surface-variant/50">groups</span>
+          </div>
+          <p className="text-body-base font-body-base text-on-surface-variant">No squads found</p>
+        </div>
+      )}
     </div>
   )
 }

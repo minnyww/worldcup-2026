@@ -1,4 +1,4 @@
-import type { Team, Match, Group, Stadium, Squad } from "../types"
+import type { Team, Match, Group, Stadium, Squad } from "./types"
 
 const BASE =
   "https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026"
