@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "chayen"
+  },
+  "targets": {
+    "chayen": {
+      "hosting": {
+        "chayen-worldcup-2026": [
+          "chayen-worldcup-2026"
+        ]
+      }
+    }
+  }
+}
