@@ -24,12 +24,7 @@ export function App() {
     useWorldCupData()
 
   const [view, setView] = useState<View>("calendar")
-  const [selectedDate, setSelectedDate] = useState<string>(
-    () => {
-      const dates = [...new Set(matches.map(m => m.date))].sort()
-      return dates[0] ?? "2026-06-11"
-    }
-  )
+  const [selectedDate, setSelectedDate] = useState<string>("2026-06-11")
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
   const [matchFilter, setMatchFilter] = useState<MatchType>("all")
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null)

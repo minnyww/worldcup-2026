@@ -19,7 +19,10 @@ export async function fetchMatches(): Promise<Match[]> {
 }
 
 export async function fetchGroups(): Promise<Group[]> {
-  return fetchJSON<Group[]>("worldcup.groups.json")
+  const data = await fetchJSON<{ name: string; groups: Group[] }>(
+    "worldcup.groups.json"
+  )
+  return data.groups
 }
 
 export async function fetchStadiums(): Promise<Stadium[]> {
