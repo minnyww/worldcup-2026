@@ -1,5 +1,5 @@
 import type { Match, Team } from "../types"
-import { cn, getTodayThai } from "@/lib/utils"
+import { cn, getTodayThai, formatThaiTime } from "@/lib/utils"
 
 interface MatchCardProps {
   match: Match
@@ -83,7 +83,7 @@ export function MatchCard({ match, teams, onClick, delay = 0 }: MatchCardProps) 
         </span>
         {!match.score && (
           <span className="text-data-tabular font-data-tabular text-on-tertiary-container font-bold italic">
-            {match.time}
+            {formatThaiTime(match.time)}
           </span>
         )}
         {match.score && match.goals1 && match.goals1.length > 0 && (
