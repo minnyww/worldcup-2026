@@ -1,19 +1,21 @@
 import { useState, useCallback, useEffect } from "react"
 import { useWorldCupData } from "./hooks/useWorldCupData"
+import { useFavorites } from "./hooks/useFavorites"
 import { CalendarView } from "./components/calendar-view"
-import { TeamView } from "./components/team-view"
 import { GroupsView } from "./components/groups-view"
 import { SquadView } from "./components/squad-view"
+import { FavoriteView } from "./components/favorite-view"
 import { MatchDetailSheet } from "./components/match-detail-sheet"
 import type { Match } from "./types"
 import { cn } from "@/lib/utils"
 
-type View = "calendar" | "teams" | "groups" | "squads"
+type View = "calendar" | "groups" | "squads" | "favorites"
 
 const tabs: { key: View; label: string; icon: string }[] = [
   { key: "calendar", label: "Scores", icon: "sports_soccer" },
   { key: "groups", label: "Groups", icon: "format_list_numbered" },
   { key: "squads", label: "Squads", icon: "groups" },
+  { key: "favorites", label: "Favorites", icon: "favorite" },
 ]
 
 function SplashScreen({ onDone }: { onDone: () => void }) {
@@ -52,11 +54,11 @@ function SplashScreen({ onDone }: { onDone: () => void }) {
 
 export function App() {
   const { teams, matches, groups, squads, loading, error } = useWorldCupData()
+  const { favorites, toggleFavorite, isFavorite } = useFavorites()
   const [showSplash, setShowSplash] = useState(true)
 
   const [view, setView] = useState<View>("calendar")
   const [selectedDate, setSelectedDate] = useState<string>("2026-06-11")
-  const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
   const [matchFilter, setMatchFilter] = useState<"all" | "group" | "knockout">("all")
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null)
   const [sheetClosing, setSheetClosing] = useState(false)
@@ -174,15 +176,6 @@ export function App() {
               onMatchSelect={setSelectedMatch}
             />
           )}
-          {view === "teams" && (
-            <TeamView
-              matches={matches}
-              teams={teams}
-              selectedTeam={selectedTeam}
-              onTeamSelect={setSelectedTeam}
-              onMatchSelect={setSelectedMatch}
-            />
-          )}
           {view === "groups" && (
             <GroupsView
               groups={groups}
@@ -192,7 +185,21 @@ export function App() {
             />
           )}
           {view === "squads" && (
-            <SquadView squads={squads} teams={teams} />
+            <SquadView
+              squads={squads}
+              teams={teams}
+              onToggleFavorite={toggleFavorite}
+              isFavorite={isFavorite}
+            />
+          )}
+          {view === "favorites" && (
+            <FavoriteView
+              teams={teams}
+              matches={matches}
+              favorites={favorites}
+              onToggleFavorite={toggleFavorite}
+              onMatchSelect={setSelectedMatch}
+            />
           )}
         </div>
       </main>

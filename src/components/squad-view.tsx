@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils"
 interface SquadViewProps {
   squads: Squad[]
   teams: Team[]
+  onToggleFavorite: (teamName: string) => void
+  isFavorite: (teamName: string) => boolean
 }
 
 function calcAge(dob: string): number {
@@ -30,7 +32,7 @@ const POS_LABELS: Record<string, string> = {
   FW: "Forwards",
 }
 
-export function SquadView({ squads, teams }: SquadViewProps) {
+export function SquadView({ squads, teams, onToggleFavorite, isFavorite }: SquadViewProps) {
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
   const [search, setSearch] = useState("")
 
@@ -118,24 +120,49 @@ export function SquadView({ squads, teams }: SquadViewProps) {
       {/* Squad cards */}
       <div className="grid grid-cols-2 gap-2.5">
         {filteredSquads.map((s) => {
+          const fav = isFavorite(s.name)
           return (
-            <button
-              key={s.fifa_code}
-              onClick={() => setSelectedTeam(s.name)}
-              className="animate-fade-in-up group relative overflow-hidden glass-card rounded-xl p-4 text-left transition-transform active:scale-[0.97] hover:border-white/30"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex size-12 items-center justify-center rounded-xl bg-surface-container border border-white/10 transition-transform duration-300 group-hover:scale-110 overflow-hidden text-2xl">
-                  {teams.find((t) => t.name === s.name)?.flag_icon ?? "🏳️"}
+            <div key={s.fifa_code} className="relative group">
+              <button
+                onClick={() => setSelectedTeam(s.name)}
+                className="animate-fade-in-up relative w-full overflow-hidden glass-card rounded-xl p-4 text-left transition-transform active:scale-[0.97] hover:border-white/30"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex size-12 items-center justify-center rounded-xl bg-surface-container border border-white/10 transition-transform duration-300 group-hover:scale-110 text-2xl overflow-hidden">
+                    {teams.find((t) => t.name === s.name)?.flag_icon ?? "🏳️"}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-body-base font-body-base font-bold">{s.name}</p>
+                    <p className="text-on-surface-variant text-[9px] mt-0.5 font-medium">
+                      {s.players.length} players
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="truncate text-body-base font-body-base font-bold">{s.name}</p>
-                  <p className="text-on-surface-variant text-[9px] mt-0.5 font-medium">
-                    {s.players.length} players
-                  </p>
-                </div>
-              </div>
-            </button>
+              </button>
+              {/* Favorite button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onToggleFavorite(s.name)
+                }}
+                className={cn(
+                  "absolute top-2 right-2 flex size-8 items-center justify-center rounded-full transition-all active:scale-90 z-10",
+                  fav
+                    ? "bg-error/20"
+                    : "bg-surface-container/80"
+                )}
+              >
+                <span
+                  className={cn(
+                    "material-symbols-outlined text-sm",
+                    fav ? "text-error" : "text-on-surface-variant"
+                  )}
+                  style={fav ? { fontVariationSettings: "'FILL' 1" } : undefined}
+                >
+                  favorite
+                </span>
+              </button>
+            </div>
           )
         })}
       </div>
