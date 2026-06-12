@@ -1,4 +1,4 @@
-import type { Match, Team } from "../types"
+import type { Match, Team, Stadium } from "../types"
 import { Badge } from "./ui/badge"
 import { cn } from "@/lib/utils"
 import { X, MapPin, Clock } from "lucide-react"
@@ -6,6 +6,7 @@ import { X, MapPin, Clock } from "lucide-react"
 interface MatchDetailSheetProps {
   match: Match | null
   teams: Team[]
+  stadiums?: Stadium[]
   onClose: () => void
 }
 
@@ -14,6 +15,10 @@ function getTeamFlag(teamName: string, teams: Team[]): string {
     (t) => t.name === teamName || t.fifa_code === teamName
   )
   return team?.flag_icon ?? ""
+}
+
+function getStadium(city: string, stadiums: Stadium[]): Stadium | undefined {
+  return stadiums.find((s) => s.city === city)
 }
 
 function formatDate(dateStr: string): string {
@@ -29,6 +34,7 @@ function formatDate(dateStr: string): string {
 export function MatchDetailSheet({
   match,
   teams,
+  stadiums = [],
   onClose,
 }: MatchDetailSheetProps) {
   if (!match) return null
@@ -36,6 +42,7 @@ export function MatchDetailSheet({
   const flag1 = getTeamFlag(match.team1, teams)
   const flag2 = getTeamFlag(match.team2, teams)
   const isFinished = !!match.score
+  const stadium = getStadium(match.ground, stadiums)
 
   return (
     <>
@@ -75,7 +82,10 @@ export function MatchDetailSheet({
                 </span>
               )}
               {isFinished && (
-                <Badge variant="secondary" className="bg-primary text-primary-foreground text-xs">
+                <Badge
+                  variant="secondary"
+                  className="bg-primary text-primary-foreground text-xs"
+                >
                   Full Time
                 </Badge>
               )}
@@ -101,7 +111,20 @@ export function MatchDetailSheet({
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <MapPin className="size-4" />
-            <span>{match.ground}</span>
+            <div>
+              <span>{match.ground}</span>
+              {stadium && (
+                <span className="ml-1 text-xs">
+                  &middot; {stadium.name}
+                  {stadium.capacity && (
+                    <span className="text-muted-foreground">
+                      {" "}
+                      ({stadium.capacity.toLocaleString()} seats)
+                    </span>
+                  )}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

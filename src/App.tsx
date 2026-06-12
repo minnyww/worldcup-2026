@@ -1,42 +1,69 @@
-import { useState, useMemo } from "react"
-import matches from "./data/matches.json"
-import teams from "./data/teams.json"
-import groups from "./data/groups.json"
+import { useState } from "react"
+import { useWorldCupData } from "./hooks/useWorldCupData"
 import { CalendarView } from "./components/calendar-view"
 import { TeamView } from "./components/team-view"
 import { GroupsView } from "./components/groups-view"
+import { SquadView } from "./components/squad-view"
 import { MatchDetailSheet } from "./components/match-detail-sheet"
-import type { Match, Team } from "./types"
-import { Calendar, Users, Trophy } from "lucide-react"
+import type { Match } from "./types"
+import { Calendar, Users, Trophy, Shirt } from "lucide-react"
+import { cn } from "@/lib/utils"
 
-type View = "calendar" | "teams" | "groups"
+type View = "calendar" | "teams" | "groups" | "squads"
 type MatchType = "all" | "group" | "knockout"
 
-const allMatches = matches as Match[]
-const allTeams = teams as Team[]
-const allGroups = groups as { name: string; teams: string[] }[]
+const tabs: { key: View; label: string; icon: typeof Calendar }[] = [
+  { key: "calendar", label: "Schedule", icon: Calendar },
+  { key: "teams", label: "Teams", icon: Users },
+  { key: "groups", label: "Groups", icon: Trophy },
+  { key: "squads", label: "Squads", icon: Shirt },
+]
 
 export function App() {
+  const { teams, matches, groups, squads, loading, error } =
+    useWorldCupData()
+
   const [view, setView] = useState<View>("calendar")
   const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
+    () => {
+      const dates = [...new Set(matches.map(m => m.date))].sort()
+      return dates[0] ?? "2026-06-11"
+    }
   )
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
   const [matchFilter, setMatchFilter] = useState<MatchType>("all")
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null)
 
-  const sortedMatches = useMemo(
-    () =>
-      [...allMatches].sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-      ),
-    []
-  )
+  const dateRange = [...new Set(matches.map((m) => m.date))].sort()
 
-  const dateRange = useMemo(() => {
-    const dates = [...new Set(sortedMatches.map((m) => m.date))].sort()
-    return dates
-  }, [sortedMatches])
+  if (loading) {
+    return (
+      <div className="dark flex min-h-svh flex-col items-center justify-center bg-background text-foreground">
+        <div className="flex flex-col items-center gap-4">
+          <div className="size-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">
+            Loading World Cup 2026 data...
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="dark flex min-h-svh flex-col items-center justify-center bg-background text-foreground">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <p className="text-sm text-destructive">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="rounded-full bg-primary px-4 py-2 text-xs font-medium text-primary-foreground"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="dark flex min-h-svh flex-col bg-background text-foreground">
@@ -57,8 +84,8 @@ export function App() {
       <main className="mx-auto w-full max-w-lg flex-1 pb-20">
         {view === "calendar" && (
           <CalendarView
-            matches={sortedMatches}
-            teams={allTeams}
+            matches={matches}
+            teams={teams}
             selectedDate={selectedDate}
             onDateSelect={setSelectedDate}
             matchFilter={matchFilter}
@@ -69,8 +96,8 @@ export function App() {
         )}
         {view === "teams" && (
           <TeamView
-            matches={sortedMatches}
-            teams={allTeams}
+            matches={matches}
+            teams={teams}
             selectedTeam={selectedTeam}
             onTeamSelect={setSelectedTeam}
             onMatchSelect={setSelectedMatch}
@@ -78,31 +105,29 @@ export function App() {
         )}
         {view === "groups" && (
           <GroupsView
-            groups={allGroups}
-            teams={allTeams}
-            matches={sortedMatches}
+            groups={groups}
+            teams={teams}
+            matches={matches}
             onMatchSelect={setSelectedMatch}
           />
+        )}
+        {view === "squads" && (
+          <SquadView squads={squads} teams={teams} />
         )}
       </main>
 
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg">
-          {(
-            [
-              { key: "calendar", label: "Schedule", icon: Calendar },
-              { key: "teams", label: "Teams", icon: Users },
-              { key: "groups", label: "Groups", icon: Trophy },
-            ] as const
-          ).map(({ key, label, icon: Icon }) => (
+          {tabs.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
               onClick={() => setView(key)}
-              className={`flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
+              className={cn(
+                "flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition-colors",
                 view === key
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+              )}
             >
               <Icon className="size-5" />
               {label}
@@ -113,7 +138,7 @@ export function App() {
 
       <MatchDetailSheet
         match={selectedMatch}
-        teams={allTeams}
+        teams={teams}
         onClose={() => setSelectedMatch(null)}
       />
     </div>
