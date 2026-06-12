@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react"
-import type { Squad } from "../types"
+import type { Team, Squad } from "../types"
 import { cn } from "@/lib/utils"
 
 interface SquadViewProps {
   squads: Squad[]
+  teams: Team[]
 }
 
 function calcAge(dob: string): number {
@@ -29,7 +30,7 @@ const POS_LABELS: Record<string, string> = {
   FW: "Forwards",
 }
 
-export function SquadView({ squads }: SquadViewProps) {
+export function SquadView({ squads, teams }: SquadViewProps) {
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null)
   const [search, setSearch] = useState("")
 
@@ -124,12 +125,8 @@ export function SquadView({ squads }: SquadViewProps) {
               className="animate-fade-in-up group relative overflow-hidden glass-card rounded-xl p-4 text-left transition-transform active:scale-[0.97] hover:border-white/30"
             >
               <div className="flex items-center gap-3">
-                <div className="flex size-12 items-center justify-center rounded-xl bg-surface-container border border-white/10 transition-transform duration-300 group-hover:scale-110 overflow-hidden">
-                  <img 
-                    src={`https://flagcdn.com/80x60/${s.fifa_code.toLowerCase()}.png`}
-                    alt={s.name}
-                    className="w-full h-full object-cover"
-                  />
+                <div className="flex size-12 items-center justify-center rounded-xl bg-surface-container border border-white/10 transition-transform duration-300 group-hover:scale-110 overflow-hidden text-2xl">
+                  {teams.find((t) => t.name === s.name)?.flag_icon ?? "🏳️"}
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-body-base font-body-base font-bold">{s.name}</p>

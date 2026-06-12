@@ -10,10 +10,6 @@ interface TeamViewProps {
   onMatchSelect: (match: Match) => void
 }
 
-function getTeamFlag(fifaCode: string): string {
-  return `https://flagcdn.com/80x60/${fifaCode.toLowerCase()}.png`
-}
-
 export function TeamView({
   matches,
   teams,
@@ -68,12 +64,8 @@ export function TeamView({
           </button>
           <div className="flex items-center gap-3">
             {selectedTeamData && (
-              <div className="flex size-12 items-center justify-center rounded-xl bg-tertiary-container border border-tertiary/20 overflow-hidden">
-                <img 
-                  src={getTeamFlag(selectedTeamData.fifa_code)}
-                  alt={selectedTeam}
-                  className="w-full h-full object-cover"
-                />
+              <div className="flex size-12 items-center justify-center rounded-xl bg-tertiary-container border border-tertiary/20 text-3xl overflow-hidden">
+                {selectedTeamData.flag_icon}
               </div>
             )}
             <div>
@@ -140,12 +132,8 @@ export function TeamView({
             onClick={() => onTeamSelect(team.name)}
             className="animate-fade-in-up group relative flex flex-col items-center gap-2 glass-card rounded-xl p-3 transition-transform active:scale-90 hover:border-white/30 overflow-hidden"
           >
-            <div className="flex size-12 items-center justify-center rounded-xl bg-surface-container border border-white/10 transition-transform duration-300 group-hover:scale-110 overflow-hidden">
-              <img 
-                src={getTeamFlag(team.fifa_code)}
-                alt={team.name}
-                className="w-full h-full object-cover"
-              />
+            <div className="flex size-12 items-center justify-center rounded-xl bg-surface-container border border-white/10 transition-transform duration-300 group-hover:scale-110 text-2xl">
+              {team.flag_icon}
             </div>
             <span className="text-label-caps font-label-caps text-on-surface-variant group-hover:text-on-surface transition-colors uppercase">
               {team.fifa_code}

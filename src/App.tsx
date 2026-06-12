@@ -14,7 +14,6 @@ const tabs: { key: View; label: string; icon: string }[] = [
   { key: "calendar", label: "Scores", icon: "sports_soccer" },
   { key: "groups", label: "Groups", icon: "format_list_numbered" },
   { key: "squads", label: "Squads", icon: "groups" },
-  { key: "teams", label: "News", icon: "newspaper" },
 ]
 
 function SplashScreen({ onDone }: { onDone: () => void }) {
@@ -193,7 +192,7 @@ export function App() {
             />
           )}
           {view === "squads" && (
-            <SquadView squads={squads} />
+            <SquadView squads={squads} teams={teams} />
           )}
         </div>
       </main>
