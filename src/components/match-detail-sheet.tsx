@@ -1,5 +1,5 @@
 import type { Match, Team } from "../types"
-import { cn } from "@/lib/utils"
+import { cn, formatThaiDate, formatThaiTime } from "@/lib/utils"
 
 interface MatchDetailSheetProps {
   match: Match | null
@@ -15,14 +15,7 @@ function getTeamFlag(teamName: string, teams: Team[]): string {
   return team?.flag_icon ?? "🏳️"
 }
 
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr + "T00:00:00")
-  return d.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  })
-}
+
 
 export function MatchDetailSheet({
   match,
@@ -121,7 +114,7 @@ export function MatchDetailSheet({
             <span className="material-symbols-outlined text-on-tertiary-container">schedule</span>
             <div className="flex flex-col">
               <span className="text-label-caps font-label-caps text-on-surface-variant uppercase">Date & Time</span>
-              <span className="text-body-base font-body-base font-semibold mt-0.5 text-on-surface">{formatDate(match.date)} · {match.time}</span>
+              <span className="text-body-base font-body-base font-semibold mt-0.5 text-on-surface">{formatThaiDate(match.date)} · {formatThaiTime(match.time)}</span>
             </div>
           </div>
           <div className="animate-fade-in-up flex items-center gap-3 glass-card rounded-xl p-card-padding" style={{ animationDelay: "300ms" }}>

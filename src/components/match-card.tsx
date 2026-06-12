@@ -1,5 +1,5 @@
 import type { Match, Team } from "../types"
-import { cn } from "@/lib/utils"
+import { cn, getTodayThai } from "@/lib/utils"
 
 interface MatchCardProps {
   match: Match
@@ -17,12 +17,8 @@ function getTeamFlag(teamName: string, teams: Team[]): string {
 
 function getMatchStatus(match: Match): "live" | "ended" | "upcoming" {
   if (match.score) return "ended"
-  const now = new Date()
-  const matchDate = new Date(match.date)
-  const diffDays = Math.floor(
-    (now.getTime() - matchDate.getTime()) / (1000 * 60 * 60 * 24)
-  )
-  if (diffDays === 0) return "live"
+  const todayThai = getTodayThai()
+  if (match.date === todayThai) return "live"
   return "upcoming"
 }
 

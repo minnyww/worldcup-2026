@@ -1,7 +1,7 @@
 import { useMemo, useRef, useEffect } from "react"
 import type { Match, Team } from "../types"
 import { MatchCard } from "./match-card"
-import { cn } from "@/lib/utils"
+import { cn, toThaiDateStr } from "@/lib/utils"
 
 interface CalendarViewProps {
   matches: Match[]
@@ -39,14 +39,14 @@ export function CalendarView({
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const weekDates = useMemo(() => {
-    const selected = new Date(selectedDate)
-    const day = selected.getDay()
+    const selected = new Date(selectedDate + "T12:00:00Z")
+    const day = selected.getUTCDay()
     const start = new Date(selected)
-    start.setDate(start.getDate() - day - 7)
+    start.setUTCDate(start.getUTCDate() - day - 7)
     return Array.from({ length: 21 }, (_, i) => {
       const d = new Date(start)
-      d.setDate(d.getDate() + i)
-      return d.toISOString().split("T")[0]
+      d.setUTCDate(d.getUTCDate() + i)
+      return toThaiDateStr(d)
     })
   }, [selectedDate])
 
@@ -60,9 +60,9 @@ export function CalendarView({
   }, [selectedDate])
 
   const navigateWeek = (dir: -1 | 1) => {
-    const newDate = new Date(selectedDate)
-    newDate.setDate(newDate.getDate() + dir * 7)
-    const newDateStr = newDate.toISOString().split("T")[0]
+    const newDate = new Date(selectedDate + "T12:00:00Z")
+    newDate.setUTCDate(newDate.getUTCDate() + dir * 7)
+    const newDateStr = toThaiDateStr(newDate)
     const closest = dateRange.reduce((prev, curr) =>
       Math.abs(new Date(curr).getTime() - new Date(newDateStr).getTime()) <
       Math.abs(new Date(prev).getTime() - new Date(newDateStr).getTime())
